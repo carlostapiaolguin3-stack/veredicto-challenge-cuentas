@@ -47,10 +47,21 @@ solicitado.
   implementarlo en `CuentaEnMemoria`, crear el **caso de uso** y el **endpoint**.
 - 200 con la lista (puede ir vacía) · 400 si el estado no es válido.
 
-### F3 · Bloquear una cuenta
-`POST /api/v1/cuentas/{numero}/bloquear` → cambia el estado a `BLOQUEADA`.
-- **Regla de negocio:** no se puede bloquear una cuenta `CERRADA` → responde 409.
-- Requiere un método para **persistir** el cambio en el puerto de salida + manejo del nuevo error.
+### F3 · Integración con indicadores económicos (API externa)
+`GET /api/v1/cuentas/{numero}/saldo-uf` → devuelve el saldo disponible **convertido a UF**,
+consumiendo el valor de la UF desde la API pública **https://mindicador.cl/api/uf**.
+- 200 con `{ "numero": "...", "saldoDisponible": ..., "uf": ..., "saldoEnUf": ... }`
+- Crea un **nuevo puerto de salida** (ej. `IndicadoresPort`) y su **adapter** que llama al servicio
+  externo con un cliente HTTP (`RestClient`/`WebClient`). El número de cuenta sigue validando (400) y
+  la cuenta debe existir (404).
+- **Manejo de error:** si el servicio externo falla o no responde a tiempo → responde **503**.
+- Externaliza la URL en configuración (no hardcodeada).
+
+### F4 · Próximo día hábil según feriados (API externa)
+`GET /api/v1/feriados/proximo` → devuelve el **próximo día hábil** a partir de hoy, descontando fines
+de semana y **feriados de Chile** obtenidos de una API pública de feriados.
+- 200 con `{ "fecha": "YYYY-MM-DD" }`
+- Mismo patrón que F3: puerto de salida + adapter externo + manejo de fallo (503).
 
 ## 4. Qué evaluamos
 

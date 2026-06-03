@@ -11,6 +11,14 @@ management:
       exposure:
         include: health,info
 
+# APIs externas (para F3 / F4). Externaliza las URLs aquí, no las hardcodees.
+indicadores:
+  uf-url: https://mindicador.cl/api/uf
+  timeout-ms: 3000
+feriados:
+  url: https://api.boostr.cl/holidays.json
+  timeout-ms: 3000
+
 logging:
   level:
     com.challenge.cuentas: DEBUG

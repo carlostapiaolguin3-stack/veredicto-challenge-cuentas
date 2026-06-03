@@ -38,4 +38,9 @@ public class CuentaEnMemoria implements CuentaRepository {
                 .filter(c -> c.numero().valor().equals(numero.valor()))
                 .findFirst();
     }
+
+    @Override
+    public List<Cuenta> listarPorEstado(Cuenta.Estado estado) {
+        return CUENTAS.stream().filter(c -> c.estado() == estado).toList();
+    }
 }

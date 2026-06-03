@@ -1,6 +1,7 @@
 package com.challenge.cuentas.infrastructure.rest;
 
 import com.challenge.cuentas.application.ports.input.ConsultarCuentaUseCase;
+import com.challenge.cuentas.application.ports.input.ListarCuentasPorEstadoUseCase;
 import com.challenge.cuentas.domain.exception.CuentaNotFoundException;
 import com.challenge.cuentas.domain.model.Cuenta;
 import com.challenge.cuentas.domain.model.NumeroCuenta;
@@ -13,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -28,13 +30,19 @@ class CuentaControllerTest {
     @MockBean
     private ConsultarCuentaUseCase consultarCuenta;
 
+    @MockBean
+    private ListarCuentasPorEstadoUseCase listarCuentas;
+
+    private Cuenta cuentaDemo() {
+        return new Cuenta(new NumeroCuenta("123456"), "Juan",
+                new BigDecimal("1500000"), new BigDecimal("500000"),
+                Cuenta.Estado.ACTIVA, LocalDate.of(2020, 3, 15));
+    }
+
     @Test
     @DisplayName("GET cuenta existente devuelve 200")
     void cuentaExistente() throws Exception {
-        Cuenta cuenta = new Cuenta(new NumeroCuenta("123456"), "Juan",
-                new BigDecimal("1500000"), new BigDecimal("500000"),
-                Cuenta.Estado.ACTIVA, LocalDate.of(2020, 3, 15));
-        when(consultarCuenta.consultar(any())).thenReturn(cuenta);
+        when(consultarCuenta.consultar(any())).thenReturn(cuentaDemo());
 
         mvc.perform(get("/api/v1/cuentas/123456"))
                 .andExpect(status().isOk())
@@ -56,6 +64,36 @@ class CuentaControllerTest {
     @DisplayName("GET con número inválido devuelve 400")
     void numeroInvalido() throws Exception {
         mvc.perform(get("/api/v1/cuentas/abc"))
+                .andExpect(status().isBadRequest());
+    }
+
+    // F1
+    @Test
+    @DisplayName("GET saldo devuelve el saldo disponible (saldoTotal + lineaCredito)")
+    void saldoDisponible() throws Exception {
+        when(consultarCuenta.consultar(any())).thenReturn(cuentaDemo());
+
+        mvc.perform(get("/api/v1/cuentas/123456/saldo"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.numero").value("123456"))
+                .andExpect(jsonPath("$.saldoDisponible").value(2000000));
+    }
+
+    // F2
+    @Test
+    @DisplayName("GET listar por estado devuelve las cuentas del estado")
+    void listarPorEstado() throws Exception {
+        when(listarCuentas.listar(Cuenta.Estado.ACTIVA)).thenReturn(List.of(cuentaDemo()));
+
+        mvc.perform(get("/api/v1/cuentas").param("estado", "ACTIVA"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].numero").value("123456"));
+    }
+
+    @Test
+    @DisplayName("GET listar con estado inválido devuelve 400")
+    void estadoInvalido() throws Exception {
+        mvc.perform(get("/api/v1/cuentas").param("estado", "XXX"))
                 .andExpect(status().isBadRequest());
     }
 }

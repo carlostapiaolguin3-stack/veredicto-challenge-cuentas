@@ -1,6 +1,7 @@
 package com.challenge.cuentas.infrastructure.rest;
 
 import com.challenge.cuentas.application.ports.input.ConsultarCuentaUseCase;
+import com.challenge.cuentas.application.ports.input.ListarCuentasPorEstadoUseCase;
 import com.challenge.cuentas.domain.exception.CuentaNotFoundException;
 import com.challenge.cuentas.domain.model.Cuenta;
 import com.challenge.cuentas.domain.model.NumeroCuenta;
@@ -13,6 +14,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -28,12 +30,16 @@ class CuentaControllerTest {
     @MockBean
     private ConsultarCuentaUseCase consultarCuenta;
 
+    @MockBean
+    private ListarCuentasPorEstadoUseCase listarCuentasPorEstado;
+
     @Test
     @DisplayName("GET cuenta existente devuelve 200")
     void cuentaExistente() throws Exception {
         Cuenta cuenta = new Cuenta(new NumeroCuenta("123456"), "Juan",
                 new BigDecimal("1500000"), new BigDecimal("500000"),
                 Cuenta.Estado.ACTIVA, LocalDate.of(2020, 3, 15));
+
         when(consultarCuenta.consultar(any())).thenReturn(cuenta);
 
         mvc.perform(get("/api/v1/cuentas/123456"))
@@ -58,4 +64,29 @@ class CuentaControllerTest {
         mvc.perform(get("/api/v1/cuentas/abc"))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    @DisplayName("GET cuentas por estado devuelve 200")
+    void listarCuentasPorEstado() throws Exception {
+        Cuenta cuenta1 = new Cuenta(new NumeroCuenta("123456"), "Juan",
+                new BigDecimal("1500000"), new BigDecimal("500000"),
+                Cuenta.Estado.ACTIVA, LocalDate.of(2020, 3, 15));
+    
+        Cuenta cuenta2 = new Cuenta(new NumeroCuenta("555555"), "Pedro",
+                new BigDecimal("80000"), BigDecimal.ZERO,
+                Cuenta.Estado.ACTIVA, LocalDate.of(2022, 7, 1));
+    
+        when(listarCuentasPorEstado.listarPorEstado(Cuenta.Estado.ACTIVA))
+                .thenReturn(List.of(cuenta1, cuenta2));
+    
+        mvc.perform(get("/api/v1/cuentas").param("estado", "ACTIVA"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].numero").value("123456"))
+                .andExpect(jsonPath("$[0].estado").value("ACTIVA"))
+                .andExpect(jsonPath("$[1].numero").value("555555"))
+                .andExpect(jsonPath("$[1].estado").value("ACTIVA"));
+    }
+
+    
+
 }

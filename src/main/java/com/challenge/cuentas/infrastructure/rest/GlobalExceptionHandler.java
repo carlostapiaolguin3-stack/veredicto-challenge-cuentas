@@ -1,6 +1,7 @@
 package com.challenge.cuentas.infrastructure.rest;
 
 import com.challenge.cuentas.domain.exception.CuentaNotFoundException;
+import com.challenge.cuentas.domain.exception.ServicioExternoNoDisponibleException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -25,6 +26,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> entradaInvalida(IllegalArgumentException e) {
         return cuerpo(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(ServicioExternoNoDisponibleException.class)
+    public ResponseEntity<Map<String, Object>> servicioNoDisponible(ServicioExternoNoDisponibleException e) {
+        return cuerpo(HttpStatus.SERVICE_UNAVAILABLE, e.getMessage());
     }
 
     private ResponseEntity<Map<String, Object>> cuerpo(HttpStatus status, String mensaje) {

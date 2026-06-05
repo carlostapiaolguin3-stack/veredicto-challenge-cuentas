@@ -1,10 +1,12 @@
 package com.challenge.cuentas.infrastructure.rest;
 
 import com.challenge.cuentas.application.ports.input.ConsultarCuentaUseCase;
+import com.challenge.cuentas.application.ports.input.ConsultarSaldoUfUseCase;
 import com.challenge.cuentas.application.ports.input.ListarCuentasPorEstadoUseCase;
 import com.challenge.cuentas.domain.exception.CuentaNotFoundException;
 import com.challenge.cuentas.domain.model.Cuenta;
 import com.challenge.cuentas.domain.model.NumeroCuenta;
+import com.challenge.cuentas.domain.model.SaldoUf;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,6 +34,9 @@ class CuentaControllerTest {
 
     @MockBean
     private ListarCuentasPorEstadoUseCase listarCuentasPorEstado;
+
+    @MockBean
+    private ConsultarSaldoUfUseCase consultarSaldoUf;
 
     @Test
     @DisplayName("GET cuenta existente devuelve 200")
@@ -71,14 +76,14 @@ class CuentaControllerTest {
         Cuenta cuenta1 = new Cuenta(new NumeroCuenta("123456"), "Juan",
                 new BigDecimal("1500000"), new BigDecimal("500000"),
                 Cuenta.Estado.ACTIVA, LocalDate.of(2020, 3, 15));
-    
+
         Cuenta cuenta2 = new Cuenta(new NumeroCuenta("555555"), "Pedro",
                 new BigDecimal("80000"), BigDecimal.ZERO,
                 Cuenta.Estado.ACTIVA, LocalDate.of(2022, 7, 1));
-    
+
         when(listarCuentasPorEstado.listarPorEstado(Cuenta.Estado.ACTIVA))
                 .thenReturn(List.of(cuenta1, cuenta2));
-    
+
         mvc.perform(get("/api/v1/cuentas").param("estado", "ACTIVA"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].numero").value("123456"))
@@ -87,6 +92,23 @@ class CuentaControllerTest {
                 .andExpect(jsonPath("$[1].estado").value("ACTIVA"));
     }
 
-    
+    @Test
+    @DisplayName("GET saldo en UF devuelve 200")
+    void consultarSaldoUf() throws Exception {
+        SaldoUf saldoUf = new SaldoUf(
+                new NumeroCuenta("123456"),
+                new BigDecimal("2000000"),
+                new BigDecimal("40000"),
+                new BigDecimal("50.00")
+        );
 
+        when(consultarSaldoUf.consultarSaldoUf(any())).thenReturn(saldoUf);
+
+        mvc.perform(get("/api/v1/cuentas/123456/saldo-uf"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.numeroCuenta").value("123456"))
+                .andExpect(jsonPath("$.saldoDisponible").value(2000000))
+                .andExpect(jsonPath("$.valorUf").value(40000))
+                .andExpect(jsonPath("$.saldoEnUf").value(50.00));
+    }
 }

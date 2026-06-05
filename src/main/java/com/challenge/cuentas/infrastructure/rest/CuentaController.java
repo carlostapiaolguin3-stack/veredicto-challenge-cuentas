@@ -1,9 +1,11 @@
 package com.challenge.cuentas.infrastructure.rest;
 
 import com.challenge.cuentas.application.ports.input.ConsultarCuentaUseCase;
+import com.challenge.cuentas.application.ports.input.ConsultarSaldoUfUseCase;
 import com.challenge.cuentas.application.ports.input.ListarCuentasPorEstadoUseCase;
 import com.challenge.cuentas.domain.model.Cuenta;
 import com.challenge.cuentas.domain.model.NumeroCuenta;
+import com.challenge.cuentas.domain.model.SaldoUf;
 
 import java.util.List;
 
@@ -25,12 +27,15 @@ public class CuentaController {
 
     private final ConsultarCuentaUseCase consultarCuenta;
     private final ListarCuentasPorEstadoUseCase listarCuentasPorEstado;
+    private final ConsultarSaldoUfUseCase consultarSaldoUf;
 
     public CuentaController(ConsultarCuentaUseCase consultarCuenta,
-            ListarCuentasPorEstadoUseCase listarCuentasPorEstado
+            ListarCuentasPorEstadoUseCase listarCuentasPorEstado,
+            ConsultarSaldoUfUseCase consultarSaldoUf
     ) {
         this.consultarCuenta = consultarCuenta;
         this.listarCuentasPorEstado = listarCuentasPorEstado;
+        this.consultarSaldoUf = consultarSaldoUf;
     }
 
     @GetMapping("/{numero}")
@@ -44,5 +49,12 @@ public class CuentaController {
         List<Cuenta> cuentas = listarCuentasPorEstado.listarPorEstado(estado);
         return ResponseEntity.ok(cuentas.stream().map(CuentaResponse::from).toList());
     }
+
+    @GetMapping("/{numero}/saldo-uf")
+    public ResponseEntity<SaldoUfResponse> consultarSaldoUf(@PathVariable String numero) {
+        SaldoUf saldoUf = consultarSaldoUf.consultarSaldoUf(new NumeroCuenta(numero));
+        return ResponseEntity.ok(SaldoUfResponse.from(saldoUf));
+    }
+    
 
 }

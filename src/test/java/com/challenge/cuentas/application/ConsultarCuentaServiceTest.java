@@ -13,6 +13,8 @@ import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 class ConsultarCuentaServiceTest {
 
@@ -21,7 +23,8 @@ class ConsultarCuentaServiceTest {
     void devuelveCuentaCuandoExiste() {
         Cuenta cuenta = new Cuenta(new NumeroCuenta("123456"), "Test",
                 new BigDecimal("100"), BigDecimal.ZERO, Cuenta.Estado.ACTIVA, LocalDate.now());
-        CuentaRepository repo = numero -> Optional.of(cuenta);
+        CuentaRepository repo = mock(CuentaRepository.class);
+        when(repo.buscarPor(any())).thenReturn(Optional.of(cuenta));
         ConsultarCuentaService service = new ConsultarCuentaService(repo);
 
         Cuenta resultado = service.consultar(new NumeroCuenta("123456"));
@@ -32,7 +35,8 @@ class ConsultarCuentaServiceTest {
     @Test
     @DisplayName("lanza CuentaNotFoundException cuando no existe")
     void lanzaNotFoundCuandoNoExiste() {
-        CuentaRepository repo = numero -> Optional.empty();
+        CuentaRepository repo = mock(CuentaRepository.class);
+        when(repo.buscarPor(any())).thenReturn(Optional.empty());
         ConsultarCuentaService service = new ConsultarCuentaService(repo);
 
         assertThrows(CuentaNotFoundException.class,
